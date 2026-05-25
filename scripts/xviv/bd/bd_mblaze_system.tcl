@@ -22,7 +22,7 @@ proc cr_bd_bd_mblaze_system { parentCell } {
   xilinx.com:ip:smartconnect:1.0\
   xilinx.com:ip:axi_uartlite:2.0\
   xilinx.com:ip:axi_gpio:2.0\
-  xviv.org:xviv:axi_pulse_ctrl:1.0\
+  xviv.org:xviv:axi_pulse_cntrl:1.0\
   xilinx.com:ip:lmb_v10:3.0\
   xilinx.com:ip:lmb_bram_if_cntlr:4.0\
   xilinx.com:ip:blk_mem_gen:8.4\
@@ -248,13 +248,13 @@ proc create_hier_cell_microblaze_0_local_memory { parentCell nameHier } {
   ] $axi_gpio_0
 
 
-  # Create instance: axi_pulse_ctrl_0, and set properties
-  set axi_pulse_ctrl_0 [ create_bd_cell -type ip -vlnv xviv.org:xviv:axi_pulse_ctrl:1.0 axi_pulse_ctrl_0 ]
+  # Create instance: axi_pulse_cntrl_0, and set properties
+  set axi_pulse_cntrl_0 [ create_bd_cell -type ip -vlnv xviv.org:xviv:axi_pulse_cntrl:1.0 axi_pulse_cntrl_0 ]
 
   # Create interface connections
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports gpio_rtl_0] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO2 [get_bd_intf_ports gpio_rtl_1] [get_bd_intf_pins axi_gpio_0/GPIO2]
-  connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins axi_pulse_ctrl_0/s_axi]
+  connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins axi_pulse_cntrl_0/s_axi]
   connect_bd_intf_net -intf_net axi_smc_M01_AXI [get_bd_intf_pins axi_smc/M01_AXI] [get_bd_intf_pins axi_uartlite_0/S_AXI]
   connect_bd_intf_net -intf_net axi_smc_M02_AXI [get_bd_intf_pins axi_smc/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
   connect_bd_intf_net -intf_net axi_uartlite_0_UART [get_bd_intf_ports uart_0] [get_bd_intf_pins axi_uartlite_0/UART]
@@ -264,7 +264,7 @@ proc create_hier_cell_microblaze_0_local_memory { parentCell nameHier } {
   connect_bd_intf_net -intf_net microblaze_0_ilmb_1 [get_bd_intf_pins microblaze_0/ILMB] [get_bd_intf_pins microblaze_0_local_memory/ILMB]
 
   # Create port connections
-  connect_bd_net -net axi_pulse_ctrl_0_pulse_out  [get_bd_pins axi_pulse_ctrl_0/pulse_out] \
+  connect_bd_net -net axi_pulse_cntrl_0_pulse_out  [get_bd_pins axi_pulse_cntrl_0/pulse_out] \
   [get_bd_ports pulse_out_0]
   connect_bd_net -net clk_100MHz_1  [get_bd_ports clk_100MHz] \
   [get_bd_pins clk_wiz_1/clk_in1]
@@ -280,7 +280,7 @@ proc create_hier_cell_microblaze_0_local_memory { parentCell nameHier } {
   [get_bd_pins axi_smc/aclk] \
   [get_bd_pins axi_uartlite_0/s_axi_aclk] \
   [get_bd_pins axi_gpio_0/s_axi_aclk] \
-  [get_bd_pins axi_pulse_ctrl_0/s_axi_aclk]
+  [get_bd_pins axi_pulse_cntrl_0/s_axi_aclk]
   connect_bd_net -net reset_rtl_0_1  [get_bd_ports reset_rtl_0] \
   [get_bd_pins rst_clk_wiz_1_100M/ext_reset_in]
   connect_bd_net -net rst_clk_wiz_1_100M_bus_struct_reset  [get_bd_pins rst_clk_wiz_1_100M/bus_struct_reset] \
@@ -291,11 +291,11 @@ proc create_hier_cell_microblaze_0_local_memory { parentCell nameHier } {
   [get_bd_pins axi_smc/aresetn] \
   [get_bd_pins axi_uartlite_0/s_axi_aresetn] \
   [get_bd_pins axi_gpio_0/s_axi_aresetn] \
-  [get_bd_pins axi_pulse_ctrl_0/s_axi_aresetn]
+  [get_bd_pins axi_pulse_cntrl_0/s_axi_aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
-  assign_bd_address -offset 0x44A00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_pulse_ctrl_0/s_axi/Reg] -force
+  assign_bd_address -offset 0x44A00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_pulse_cntrl_0/s_axi/Reg] -force
   assign_bd_address -offset 0x40600000 -range 0x00010000 -target_address_space [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_uartlite_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x00008000 -target_address_space [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs microblaze_0_local_memory/dlmb_bram_if_cntlr/SLMB/Mem] -force
   assign_bd_address -offset 0x00000000 -range 0x00008000 -target_address_space [get_bd_addr_spaces microblaze_0/Instruction] [get_bd_addr_segs microblaze_0_local_memory/ilmb_bram_if_cntlr/SLMB/Mem] -force

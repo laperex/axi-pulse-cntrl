@@ -2,7 +2,7 @@
 #include "xparameters.h"
 #include "xgpio.h"
 
-#define PULSE_BASE   XPAR_AXI_PULSE_CTRL_0_BASEADDR
+#define PULSE_BASE   XPAR_AXI_PULSE_CNTRL_0_BASEADDR
 #define PULSE_CTRL   0x00
 #define PULSE_PERIOD 0x04
 #define PULSE_WIDTH  0x08
@@ -36,7 +36,7 @@ int main(void) {
     PULSE_WR(PULSE_WIDTH,  CLK_HZ / 2);
     PULSE_WR(PULSE_CTRL,   CTRL_ENABLE);
 
-    xil_printf("axi_pulse_ctrl demo running\r\n");
+    xil_printf("axi_pulse_cntrl demo running\r\n");
     xil_printf("btnU=faster  btnD=slower  btnL=invert  btnR=toggle enable\r\n\r\n");
 
     u8  prev_btns   = 0;

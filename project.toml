@@ -6,14 +6,14 @@ name = "main"
 fpga_part = "xc7a35tcpg236-1"
 
 [[ip]]
-name = "axi_pulse_ctrl"
+name = "axi_pulse_cntrl"
 sources = [
 	"./srcs/rtl/if_axi_lite.sv",
 	"./srcs/rtl/axi_pulse_cntrl.sv"
 ]
 
 [[wrapper]]
-ip = "axi_pulse_ctrl"
+ip = "axi_pulse_cntrl"
 sources = [
 	"./srcs/rtl/if_axi_lite.sv",
 	"./srcs/rtl/axi_pulse_cntrl.sv"
@@ -30,6 +30,8 @@ run_opt      = true
 run_place    = true
 run_phys_opt = true
 run_route    = true
+synth_incremental = true
+impl_incremental = true
 route_report_timing_summary = true
 synth_report_utilization    = true
 route_report_drc            = true
@@ -45,3 +47,16 @@ name     = "firmware"
 platform = "mb_platform"
 template = "empty_application"
 sources  = ["./srcs/sw/main.c"]
+
+
+
+[[simulation]]
+name      = "tb_axi_pulse_cntrl"
+top       = "tb_axi_pulse_cntrl"
+backend   = "xsim"
+timescale = "1ns/1ps"
+sources   = [
+	"./srcs/rtl/if_axi_lite.sv",
+	"./srcs/rtl/axi_pulse_cntrl.sv",
+	"./srcs/sim/tb_axi_pulse_cntrl.sv"
+]

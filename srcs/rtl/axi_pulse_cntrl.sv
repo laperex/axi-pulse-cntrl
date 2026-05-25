@@ -1,4 +1,4 @@
-module axi_pulse_ctrl (
+module axi_pulse_cntrl (
     if_axi_lite.slave s_axi,
 
     output logic pulse_out
@@ -44,13 +44,13 @@ module axi_pulse_ctrl (
                 end
 
                 WR_RESP: begin
-                    s_axi.bvalid <= 1'b1;
-                    s_axi.bresp <= 2'b00;
-                    if (s_axi.bready) begin
-                        s_axi.bvalid <= 1'b0;
-                        wr_state <= WR_IDLE;
-                    end
-                end
+					s_axi.bvalid <= 1'b1;
+					s_axi.bresp  <= 2'b00;
+					if (s_axi.bvalid && s_axi.bready) begin   // only clear after master has seen it
+						s_axi.bvalid <= 1'b0;
+						wr_state     <= WR_IDLE;
+					end
+				end
 
                 default: wr_state <= WR_IDLE;
             endcase
@@ -99,8 +99,8 @@ module axi_pulse_ctrl (
 
     logic [31: 0] counter;
     logic raw_pulse;
-    logic enable = reg_ctrl[0];
-    logic invert = reg_ctrl[1];
+    wire enable = reg_ctrl[0];
+    wire invert = reg_ctrl[1];
 
     always_ff @(posedge s_axi.aclk) begin
         if (!s_axi.aresetn || !enable) begin

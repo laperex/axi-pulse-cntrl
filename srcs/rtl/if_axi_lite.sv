@@ -45,4 +45,4 @@ interface if_axi_lite #(
 		input arready, rdata, rresp, rvalid,
 		output rready
 	);
-endinterface: if_axi_lite
+endinterface
