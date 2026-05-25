@@ -1,4 +1,4 @@
-# axi-pulse-cntrl — xviv Example Project
+# axi-pulse-cntrl
 
 A minimal but complete xviv project targeting the **Basys3** (Artix-7 `xc7a35tcpg236-1`). It demonstrates the full xviv workflow — from a custom AXI4-Lite IP through block design, synthesis, and embedded firmware — all driven from a single `project.toml`.
 
