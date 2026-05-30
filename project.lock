@@ -1,0 +1,577 @@
+[project]
+work_dir = "./build"
+log_file = "./build/log/xviv.log"
+board_repo = []
+ip_repo = ["./build/ip"]
+
+[[fpga]]
+name = "main"
+fpga_part = "xc7a35tcpg236-1"
+
+[[ip]]
+vendor = "xviv.org"
+library = "xviv"
+version = "1.0"
+vlnv = "xviv.org:xviv:axi_pulse_cntrl:1.0"
+repo = "/home/laperex/Programming/xviv_examples/mb_axi_test/build/ip"
+name = "axi_pulse_cntrl"
+top = "axi_pulse_cntrl"
+fpga = "main"
+
+[[ip.sources]]
+files = ["./srcs/rtl/if_axi_lite.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[ip.sources]]
+files = ["./srcs/rtl/axi_pulse_cntrl.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[wrapper]]
+wrapper_top = "axi_pulse_cntrl_wrapper"
+ip = "axi_pulse_cntrl"
+top = "axi_pulse_cntrl"
+wrapper_file = "./build/wrapper/axi_pulse_cntrl_wrapper.sv"
+
+[[wrapper.sources]]
+files = ["./srcs/rtl/if_axi_lite.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[wrapper.sources]]
+files = ["./srcs/rtl/axi_pulse_cntrl.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[core]]
+name = "test_core"
+vlnv = "pulse_cntrl:1"
+fpga = "main"
+xci_file = "./build/core/test_core/test_core.xci"
+
+[[core]]
+name = "bd_mblaze_system_microblaze_0_0"
+vlnv = "xilinx.com:ip:microblaze:11.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_microblaze_0_0/bd_mblaze_system_microblaze_0_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_dlmb_v10_0"
+vlnv = "xilinx.com:ip:lmb_v10:3.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_dlmb_v10_0/bd_mblaze_system_dlmb_v10_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_ilmb_v10_0"
+vlnv = "xilinx.com:ip:lmb_v10:3.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_ilmb_v10_0/bd_mblaze_system_ilmb_v10_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_dlmb_bram_if_cntlr_0"
+vlnv = "xilinx.com:ip:lmb_bram_if_cntlr:4.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_dlmb_bram_if_cntlr_0/bd_mblaze_system_dlmb_bram_if_cntlr_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_ilmb_bram_if_cntlr_0"
+vlnv = "xilinx.com:ip:lmb_bram_if_cntlr:4.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_ilmb_bram_if_cntlr_0/bd_mblaze_system_ilmb_bram_if_cntlr_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_lmb_bram_0"
+vlnv = "xilinx.com:ip:blk_mem_gen:8.4"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_lmb_bram_0/bd_mblaze_system_lmb_bram_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_mdm_1_0"
+vlnv = "xilinx.com:ip:mdm:3.2"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_mdm_1_0/bd_mblaze_system_mdm_1_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_clk_wiz_1_0"
+vlnv = "xilinx.com:ip:clk_wiz:6.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_clk_wiz_1_0/bd_mblaze_system_clk_wiz_1_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_rst_clk_wiz_1_100M_0"
+vlnv = "xilinx.com:ip:proc_sys_reset:5.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_rst_clk_wiz_1_100M_0/bd_mblaze_system_rst_clk_wiz_1_100M_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_axi_smc_0"
+vlnv = "xilinx.com:ip:smartconnect:1.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_axi_smc_0/bd_mblaze_system_axi_smc_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_axi_uartlite_0_0"
+vlnv = "xilinx.com:ip:axi_uartlite:2.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_axi_uartlite_0_0/bd_mblaze_system_axi_uartlite_0_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_axi_gpio_0_0"
+vlnv = "xilinx.com:ip:axi_gpio:2.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_axi_gpio_0_0/bd_mblaze_system_axi_gpio_0_0.xci"
+
+[[core]]
+name = "bd_mblaze_system_axi_pulse_cntrl_0_0"
+vlnv = "xviv.org:xviv:axi_pulse_cntrl:1.0"
+fpga = "main"
+xci_file = "./build/bd/bd_mblaze_system/ip/bd_mblaze_system_axi_pulse_cntrl_0_0/bd_mblaze_system_axi_pulse_cntrl_0_0.xci"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_microblaze_0_0"
+inst_hier_path = "microblaze_0"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_dlmb_v10_0"
+inst_hier_path = "microblaze_0_local_memory/dlmb_v10"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_ilmb_v10_0"
+inst_hier_path = "microblaze_0_local_memory/ilmb_v10"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_dlmb_bram_if_cntlr_0"
+inst_hier_path = "microblaze_0_local_memory/dlmb_bram_if_cntlr"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_ilmb_bram_if_cntlr_0"
+inst_hier_path = "microblaze_0_local_memory/ilmb_bram_if_cntlr"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_lmb_bram_0"
+inst_hier_path = "microblaze_0_local_memory/lmb_bram"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_mdm_1_0"
+inst_hier_path = "mdm_1"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_clk_wiz_1_0"
+inst_hier_path = "clk_wiz_1"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_rst_clk_wiz_1_100M_0"
+inst_hier_path = "rst_clk_wiz_1_100M"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_axi_smc_0"
+inst_hier_path = "axi_smc"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_axi_uartlite_0_0"
+inst_hier_path = "axi_uartlite_0"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_axi_gpio_0_0"
+inst_hier_path = "axi_gpio_0"
+
+[[subcore]]
+bd = "bd_mblaze_system"
+core = "bd_mblaze_system_axi_pulse_cntrl_0_0"
+inst_hier_path = "axi_pulse_cntrl_0"
+
+[[synth]]
+core = "bd_mblaze_system_microblaze_0_0"
+top = "bd_mblaze_system_microblaze_0_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_microblaze_0_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_microblaze_0_0/bd_mblaze_system_microblaze_0_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_dlmb_v10_0"
+top = "bd_mblaze_system_dlmb_v10_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_dlmb_v10_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_dlmb_v10_0/bd_mblaze_system_dlmb_v10_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_ilmb_v10_0"
+top = "bd_mblaze_system_ilmb_v10_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_ilmb_v10_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_ilmb_v10_0/bd_mblaze_system_ilmb_v10_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_dlmb_bram_if_cntlr_0"
+top = "bd_mblaze_system_dlmb_bram_if_cntlr_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_dlmb_bram_if_cntlr_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_dlmb_bram_if_cntlr_0/bd_mblaze_system_dlmb_bram_if_cntlr_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_ilmb_bram_if_cntlr_0"
+top = "bd_mblaze_system_ilmb_bram_if_cntlr_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_ilmb_bram_if_cntlr_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_ilmb_bram_if_cntlr_0/bd_mblaze_system_ilmb_bram_if_cntlr_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_lmb_bram_0"
+top = "bd_mblaze_system_lmb_bram_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_lmb_bram_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_lmb_bram_0/bd_mblaze_system_lmb_bram_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_mdm_1_0"
+top = "bd_mblaze_system_mdm_1_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_mdm_1_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_mdm_1_0/bd_mblaze_system_mdm_1_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_clk_wiz_1_0"
+top = "bd_mblaze_system_clk_wiz_1_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_clk_wiz_1_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_clk_wiz_1_0/bd_mblaze_system_clk_wiz_1_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_rst_clk_wiz_1_100M_0"
+top = "bd_mblaze_system_rst_clk_wiz_1_100M_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_rst_clk_wiz_1_100M_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_rst_clk_wiz_1_100M_0/bd_mblaze_system_rst_clk_wiz_1_100M_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_axi_smc_0"
+top = "bd_mblaze_system_axi_smc_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_axi_smc_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_axi_smc_0/bd_mblaze_system_axi_smc_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_axi_uartlite_0_0"
+top = "bd_mblaze_system_axi_uartlite_0_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_axi_uartlite_0_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_axi_uartlite_0_0/bd_mblaze_system_axi_uartlite_0_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_axi_gpio_0_0"
+top = "bd_mblaze_system_axi_gpio_0_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_axi_gpio_0_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_axi_gpio_0_0/bd_mblaze_system_axi_gpio_0_0_stub.v"
+
+[[synth]]
+core = "bd_mblaze_system_axi_pulse_cntrl_0_0"
+top = "bd_mblaze_system_axi_pulse_cntrl_0_0"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = false
+impl_incremental = true
+run_place = false
+run_phys_opt = false
+run_route = false
+synth_directive = "default"
+synth_mode = "out_of_context"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+constraints = []
+synth_dcp = "./build/synth/bd_mblaze_system_axi_pulse_cntrl_0_0/checkpoints/synth.dcp"
+synth_stub = "./build/synth/bd_mblaze_system_axi_pulse_cntrl_0_0/bd_mblaze_system_axi_pulse_cntrl_0_0_stub.v"
+
+[[synth]]
+bd = "bd_mblaze_system"
+top = "bd_mblaze_system_wrapper"
+fpga = "main"
+synth_incremental = true
+run_synth = true
+run_opt = true
+impl_incremental = true
+run_place = true
+run_phys_opt = true
+run_route = true
+synth_directive = "default"
+synth_mode = "default"
+synth_flatten_hierarchy = "rebuilt"
+synth_fsm_extraction = "auto"
+opt_directive = "default"
+place_directive = "default"
+phys_opt_directive = "default"
+route_directive = "default"
+synth_dcp = "./build/synth/bd_mblaze_system/checkpoints/synth.dcp"
+place_dcp = "./build/synth/bd_mblaze_system/checkpoints/place.dcp"
+route_dcp = "./build/synth/bd_mblaze_system/checkpoints/route.dcp"
+bitstream = "./build/synth/bd_mblaze_system/bd_mblaze_system.bit"
+hw_platform = "./build/synth/bd_mblaze_system/bd_mblaze_system.xsa"
+synth_report_utilization = "./build/synth/bd_mblaze_system/reports/synth_report_utilization_file.rpt"
+route_report_drc = "./build/synth/bd_mblaze_system/reports/route_report_drc_file.rpt"
+route_report_timing_summary = "./build/synth/bd_mblaze_system/reports/route_report_timing_summary_file.rpt"
+
+[[synth.constraints]]
+files = ["./constraints/system.xdc"]
+used_in = ["impl", "synth"]
+
+[[bd]]
+name = "bd_mblaze_system"
+fpga = "main"
+save_file = "./scripts/xviv/bd/bd_mblaze_system.tcl"
+bd_file = "./build/bd/bd_mblaze_system/bd_mblaze_system.bd"
+bd_wrapper_file = "./build/bd/bd_mblaze_system/hdl/bd_mblaze_system_wrapper.v"
+
+[[platform]]
+name = "mb_platform"
+cpu = "microblaze_0"
+os = "standalone"
+xsa = "./build/synth/bd_mblaze_system/bd_mblaze_system.xsa"
+bitstream = "./build/synth/bd_mblaze_system/bd_mblaze_system.bit"
+work_dir = "./build/platform/mb_platform"
+
+[[app]]
+name = "firmware"
+platform = "mb_platform"
+template = "empty_application"
+work_dir = "./build/app/firmware"
+elf = "./build/app/firmware/executable.elf"
+
+[[app.sources]]
+files = ["./srcs/sw/main.c"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[simulation]]
+name = "tb_axi_pulse_cntrl"
+top = "tb_axi_pulse_cntrl"
+backend = "xsim"
+timescale = "1ns/1ps"
+uvm_version = "1.2"
+uvm_verbosity = "UVM_MEDIUM"
+plusargs = []
+defines = []
+threads = 1
+trace = false
+trace_fst = false
+verilator_args = []
+sdfmax = []
+sdfmin = []
+include_dirs = []
+work_dir = "./build/sim/tb_axi_pulse_cntrl"
+
+[[simulation.sources]]
+files = ["./srcs/rtl/if_axi_lite.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[simulation.sources]]
+files = ["./srcs/rtl/axi_pulse_cntrl.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
+
+[[simulation.sources]]
+files = ["./srcs/sim/tb_axi_pulse_cntrl.sv"]
+used_in = ["impl", "ooc", "sim", "synth"]
