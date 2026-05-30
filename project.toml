@@ -13,10 +13,6 @@ sources = ["./srcs/rtl/if_axi_lite.sv", "./srcs/rtl/axi_pulse_cntrl.sv"]
 ip = "axi_pulse_cntrl"
 sources = ["./srcs/rtl/if_axi_lite.sv", "./srcs/rtl/axi_pulse_cntrl.sv"]
 
-[[core]]
-name = 'test_core'
-vlnv = 'pulse_cntrl:1'
-
 [[bd]]
 name = "bd_mblaze_system"
 
