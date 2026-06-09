@@ -1,302 +1,330 @@
 # axi-pulse-cntrl
 
-A minimal but complete xviv project targeting the **Basys3** (Artix-7 `xc7a35tcpg236-1`). It demonstrates the full xviv workflow — from a custom AXI4-Lite IP through block design, synthesis, and embedded firmware — all driven from a single `project.toml`.
+AXI4-Lite configurable pulse-generator demo for the **Basys3** (`xc7a35tcpg236-1`).
+
+A custom AXI4-Lite peripheral drives a free-running pulse output. A **MicroBlaze** soft-core processor controls the IP over AXI — the four on-board buttons adjust period, polarity, and enable state at runtime; LEDs mirror pulse activity and speed. All button events are logged over UART.
+
+Built and managed with [xviv](https://github.com/laperex/xviv).
 
 ---
 
-## What this project does
+## System architecture
 
-A MicroBlaze soft-core processor controls a configurable pulse generator over AXI4-Lite. The firmware lets you adjust the pulse period and polarity using the four on-board buttons, and mirrors the pulse state to the LEDs.
+```mermaid
+flowchart LR
+    subgraph board["Basys3"]
+        clk["clk_100MHz\n100 MHz"]
+        btnC["btnC — reset"]
+        btns["btnU / D / L / R"]
+        leds["LD3–LD0\nspeed indicator"]
+        ld4["LD4  pulse_out_0"]
+        uart_io["USB–UART\n115200 baud"]
+    end
 
-| Output | Pin | Description |
-|--------|-----|-------------|
-| `pulse_out_0` | LD4 (W18) | The generated pulse |
-| `gpio_rtl_0[3:0]` | LD3–LD0 | Speed indicator + pulse mirror |
+    subgraph bd["bd_mblaze_system"]
+        clk_wiz["clk_wiz\n100 → 50 MHz"]
+        rst["proc_sys_reset"]
+        mb["microblaze_0\n32-bit soft core"]
+        bram["LMB BRAM\n32 KB"]
+        mdm["MDM\nJTAG debug"]
+        smc["AXI SmartConnect\n1M → 3S"]
 
-| Input | Pin | Function |
-|-------|-----|---------|
-| btnU (T18) | `gpio_rtl_1[3]` | Halve period (faster) |
-| btnD (U18) | `gpio_rtl_1[0]` | Double period (slower) |
-| btnL (T17) | `gpio_rtl_1[2]` | Toggle output invert |
-| btnR (U17) | `gpio_rtl_1[1]` | Toggle enable |
+        subgraph ip_block["axi_pulse_cntrl_0  (custom IP @ 0x44A00000)"]
+            pulse_core["axi_pulse_cntrl\nAXI4-Lite slave + counter"]
+        end
 
-UART output (115200 baud, USB–UART bridge) logs each button event.
+        gpio["axi_gpio_0\nch1: LEDs / ch2: buttons\n@ 0x40000000"]
+        uart["axi_uartlite_0\n@ 0x40600000"]
+    end
 
----
-
-## Prerequisites
-
-- Python 3.11+
-- Vivado 2024.x (with Vitis / XSCT) on `PATH`, or set the environment variable:
-  ```sh
-  export XVIV_VIVADO_SOURCE_SCRIPT=/tools/Xilinx/Vivado/2024.1/settings64.sh
-  ```
-- A Basys3 board connected over JTAG
-
-Install xviv:
-
-```sh
-pip install xviv
+    clk      --> clk_wiz
+    btnC     --> clk_wiz
+    clk_wiz  -- "50 MHz" --> rst
+    rst      -- "aresetn" --> mb & ip_block & gpio & uart & smc
+    clk_wiz  -- "50 MHz"  --> mb & ip_block & gpio & uart & smc
+    mb      <-->|"LMB"| bram
+    mb      <-->|"MDM"| mdm
+    mb       -->|"M_AXI_DP"| smc
+    smc      --> ip_block
+    smc      --> gpio
+    smc      --> uart
+    btns     --> gpio
+    gpio     --> leds
+    ip_block --> ld4
+    uart     --> uart_io
 ```
 
+### Board I/O
+
+| Signal | Pin | Direction | Function |
+|--------|-----|-----------|---------|
+| `pulse_out_0` | LD4 · W18 | Output | Generated pulse |
+| `gpio_rtl_0[3:0]` | LD3–LD0 | Output | Speed indicator + pulse mirror |
+| `gpio_rtl_1[3]` | btnU · T18 | Input | Halve period (faster) |
+| `gpio_rtl_1[2]` | btnL · T17 | Input | Toggle output invert |
+| `gpio_rtl_1[1]` | btnR · U17 | Input | Toggle enable |
+| `gpio_rtl_1[0]` | btnD · U18 | Input | Double period (slower) |
+| `uart_0_txd` | A18 | Output | UART TX |
+
 ---
 
-## Project layout
+## Project structure
 
 ```
-.
-├── project.toml                    # Single source of truth for the build
+axi-pulse-cntrl/
+├── project.toml                    # xviv project config
 ├── constraints/
-│   └── system.xdc                  # Pin assignments for Basys3
+│   └── system.xdc                  # Basys3 pin assignments (LVCMOS33, false paths)
 ├── srcs/
 │   ├── rtl/
-│   │   ├── if_axi_lite.sv          # Parameterised AXI4-Lite interface
-│   │   └── axi_pulse_cntrl.sv      # Custom IP RTL
+│   │   ├── if_axi_lite.sv          # parameterised AXI4-Lite SV interface
+│   │   └── axi_pulse_cntrl.sv      # custom IP — AXI4-Lite slave + pulse counter
 │   ├── sim/
-│   │   └── tb_axi_pulse_cntrl.sv   # Custom IP testbench
+│   │   └── tb_axi_pulse_cntrl.sv   # IP-level testbench, 7 test groups
 │   └── sw/
-│       └── main.c                  # MicroBlaze firmware
+│       └── main.c                  # MicroBlaze bare-metal firmware
 └── scripts/
-    └── xviv/
-        └── bd/
-            └── bd_mblaze_system.tcl   # Block design snapshot (version-controlled)
+    └── xviv/bd/
+        └── bd_mblaze_system.tcl    # block design TCL snapshot (version-controlled)
 ```
 
-`build/` is produced by xviv and should be gitignored — everything in it is fully reproducible from the sources above.
+`build/` is produced by xviv and is fully reproducible from the sources above.
 
----
+### Block design hierarchy
 
-## How the project is described in `project.toml`
+```mermaid
+graph TD
+    bd["<b>bd_mblaze_system</b><br/><i>Vivado Block Design</i>"]
+    clkwiz["clk_wiz<br/><i>Clocking Wizard 6.0</i>"]
+    rst["proc_sys_reset<br/><i>Processor System Reset 5.0</i>"]
+    mb["microblaze_0<br/><i>MicroBlaze 11.0</i>"]
+    bram["microblaze_0_local_memory<br/><i>LMB BRAM 32 KB</i>"]
+    mdm["mdm_0<br/><i>MDM 3.2</i>"]
+    smc["axi_smc<br/><i>AXI SmartConnect 1.0  — 1M → 3S</i>"]
+    ip["axi_pulse_cntrl_0<br/><i>pyslang-generated wrapper</i>"]
+    core["axi_pulse_cntrl<br/><i>IP RTL top</i>"]
+    gpio["axi_gpio_0<br/><i>AXI GPIO 2.0  — dual-channel</i>"]
+    uart["axi_uartlite_0<br/><i>AXI UARTlite 2.0</i>"]
 
-Understanding `project.toml` is the key to understanding any xviv project. The sections below walk through this project's file with annotations.
-
-### `[project]`
-
-```toml
-[project]
-build_dir = "build"
-```
-
-All generated artefacts land under `build/`. xviv never writes outside this directory (except for the BD TCL snapshot under `scripts/xviv/`).
-
-### `[[fpga]]`
-
-```toml
-[[fpga]]
-name      = "main"
-fpga_part = "xc7a35tcpg236-1"
-```
-
-Declares the target device. The `name` field is a reference handle used by other sections. Multiple `[[fpga]]` entries are allowed; the first is the default.
-
-### `[[ip]]` — packaging the custom IP
-
-```toml
-[[ip]]
-name    = "axi_pulse_cntrl"
-sources = [
-    "./srcs/rtl/if_axi_lite.sv",
-    "./srcs/rtl/axi_pulse_cntrl.sv"
-]
-```
-
-Points xviv at the RTL source files for the custom IP. Running `xviv create --ip axi_pulse_cntrl` invokes the Vivado IP Packager and registers the result in the project's local IP repository under `build/ip/`. Once packaged, the IP appears in the Vivado IP catalog as `xviv.org:xviv:axi_pulse_cntrl:1.0` and can be instantiated in block designs.
-
-### `[[wrapper]]` — interface flattening
-
-```toml
-[[wrapper]]
-ip      = "axi_pulse_cntrl"
-sources = [
-    "./srcs/rtl/if_axi_lite.sv",
-    "./srcs/rtl/axi_pulse_cntrl.sv"
-]
-```
-
-The RTL uses a SystemVerilog `interface` port (`if_axi_lite.slave`). Vivado's block design cannot connect interface-typed ports directly — it expects individual AXI signals. The `[[wrapper]]` section tells xviv to auto-generate a thin wrapper module that flattens the interface into the discrete signals Vivado expects, using `pyslang` to parse the source. The wrapper is transparently folded into the packaged IP.
-
-### `[[bd]]` — the block design
-
-```toml
-[[bd]]
-name = "bd_mblaze_system"
-```
-
-Declares a block design. The TCL snapshot at `scripts/xviv/bd/bd_mblaze_system.tcl` is the source of truth. Running `xviv create --bd bd_mblaze_system` recreates the full block design non-interactively from that snapshot on any machine, without needing a saved Vivado project file.
-
-The block design contains:
-- MicroBlaze processor with local BRAM (32 KB)
-- MDM debug module
-- Clock wizard: 100 MHz → 50 MHz
-- AXI SmartConnect (1 master → 3 slaves)
-- `axi_pulse_cntrl_0` — the custom IP (at `0x44A00000`)
-- AXI UARTlite (at `0x40600000`, 115200 baud)
-- AXI GPIO — dual channel, LEDs out / buttons in (at `0x40000000`)
-
-### `[[synth]]` — synthesis and implementation run
-
-```toml
-[[synth]]
-bd           = "bd_mblaze_system"
-constraints  = ["./constraints/system.xdc"]
-run_synth    = true
-run_opt      = true
-run_place    = true
-run_phys_opt = true
-run_route    = true
-synth_incremental = true
-impl_incremental = true
-route_report_timing_summary = true
-synth_report_utilization    = true
-route_report_drc            = true
-```
-
-Drives the full Vivado implementation pipeline. Each `run_*` flag is independently toggleable, so you can resume from a checkpoint without re-running earlier stages. The three `*_report_*` flags enable post-route timing, utilization, and DRC reports under `build/synth/bd_mblaze_system/reports/`.
-
-### `[[platform]]` and `[[app]]` — embedded software
-
-```toml
-[[platform]]
-name = "mb_platform"
-bd   = "bd_mblaze_system"
-cpu  = "microblaze_0"
-os   = "standalone"
-
-[[app]]
-name     = "firmware"
-platform = "mb_platform"
-template = "empty_application"
-sources  = ["./srcs/sw/main.c"]
-```
-
-`[[platform]]` generates a BSP from the XSA produced by synthesis, targeting `microblaze_0` with the standalone (bare-metal) OS. `[[app]]` creates a Vitis application project from the `empty_application` template and builds it against that BSP, compiling `main.c` into an ELF.
-
-### `[[simulation]]` — testbench simulation
-
-```toml
-[[simulation]]
-name      = "tb_axi_pulse_cntrl"
-top       = "tb_axi_pulse_cntrl"
-backend   = "xsim"
-timescale = "1ns/1ps"
-sources   = [
-    "./srcs/rtl/if_axi_lite.sv",
-    "./srcs/rtl/axi_pulse_cntrl.sv",
-    "./srcs/sim/tb_axi_pulse_cntrl.sv"
-]
+    bd --> clkwiz & rst & mb & smc & ip & gpio & uart
+    mb --> bram & mdm
+    ip --> core
 ```
 
 ---
 
-## Build walkthrough
+## Register map
 
-The steps below describe the recommended sequence for a clean build from source.
+| Offset | Name | Access | Bits | Description |
+|--------|------|--------|------|-------------|
+| `0x00` | `CTRL` | R/W | `[1:0]` | Bit 0: enable. Bit 1: invert output. |
+| `0x04` | `PERIOD` | R/W | `[31:0]` | Counter period in clock cycles (min 1). Default 50,000,000 → 1 Hz at 50 MHz. |
+| `0x08` | `WIDTH` | R/W | `[31:0]` | High-time in clock cycles. Default 25,000,000 → 50% duty cycle. |
+| `0x0C` | `STATUS` | RO | `[0]` | Current `pulse_out` value. Writes ignored. |
 
-### 1. Package the custom IP
+Writes to `PERIOD` with value `0` are clamped to `1`. The counter and `raw_pulse` reset to zero whenever `CTRL[0]` (enable) is cleared. `pulse_out = invert ? ~raw_pulse : raw_pulse`.
+
+---
+
+## AXI4-Lite bus
+
+### Channel directions
+
+```mermaid
+flowchart LR
+    M["microblaze_0<br/>(Master)"]
+    S["axi_pulse_cntrl<br/>(Slave)"]
+
+    M -->|"AW — awaddr / awprot / awvalid / awready"| S
+    M -->|"W  — wdata / wstrb / wvalid / wready"| S
+    S -->|"B  — bresp / bvalid / bready"| M
+    M -->|"AR — araddr / arprot / arvalid / arready"| S
+    S -->|"R  — rdata / rresp / rvalid / rready"| M
+```
+
+### Write channel FSM
+
+`awready` and `wready` are asserted together in `WR_IDLE`; the IP requires both AW and W to arrive simultaneously.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> WR_IDLE
+
+    WR_IDLE --> WR_RESP : awvalid && wvalid\napply write, assert bvalid & bresp=OKAY
+    WR_RESP --> WR_RESP : !bready\nhold bvalid
+    WR_RESP --> WR_IDLE : bvalid && bready\nclear bvalid
+```
+
+> Writes to `STATUS` (`0x0C`) fall through the `default` branch and are silently discarded.
+
+### Read channel FSM
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> RD_IDLE
+
+    RD_IDLE --> RD_DATA : arvalid\nlatch rdata from register mux, assert rvalid & rresp=OKAY
+    RD_DATA --> RD_DATA : !rready\nhold rvalid
+    RD_DATA --> RD_IDLE : rvalid && rready\nclear rvalid
+```
+
+`rdata` mux: `0x00` → `reg_ctrl` · `0x04` → `reg_period` · `0x08` → `reg_width` · `0x0C` → `{31'b0, pulse_out}`.
+
+---
+
+## Custom IP and wrapper generation
+
+`axi_pulse_cntrl` uses a SystemVerilog interface port (`if_axi_lite.slave s_axi`). Vivado's IP Packager cannot infer AXI bus interfaces from SV interface ports, so `[[wrapper]]` in `project.toml` instructs xviv to generate a flattened wrapper via pyslang, exposing all signals as scalar ports (`s_axi_awaddr`, `s_axi_wdata`, …). This wrapper is packaged as `xviv.org:xviv:axi_pulse_cntrl:1.0` and instantiated in the block design as `axi_pulse_cntrl_0`.
+
+```mermaid
+flowchart LR
+    src["RTL sources\nif_axi_lite.sv\naxi_pulse_cntrl.sv"]
+    pyslang["pyslang\nAST port flattening"]
+    wrapper["axi_pulse_cntrl_wrapper.sv\nscalar AXI ports\ns_axi_awaddr, s_axi_wdata, …"]
+    packager["Vivado IP Packager\ninfers AXI interfaces\nfrom port-name patterns"]
+    catalog["IP Catalog\nxviv.org:xviv:\naxi_pulse_cntrl:1.0"]
+    bd_inst["Block Design\naxi_pulse_cntrl_0\n@ 0x44A00000"]
+
+    src       -->|"xviv create --ip"| pyslang
+    pyslang   --> wrapper
+    wrapper   --> packager
+    packager  --> catalog
+    catalog   --> bd_inst
+```
 
 ```sh
+# Package the custom IP (generates wrapper, runs IP Packager)
+# --regenerate re-generates output products for all cores using this IP
 xviv create --ip axi_pulse_cntrl --regenerate
 ```
 
-This invokes the Vivado IP Packager in batch mode. The packaged IP lands in `build/ip/axi_pulse_cntrl/` and is added to the project IP catalog automatically. You only need to re-run this step if the RTL source changes.
+---
 
-`--regenerate` automatically generates output products for all cores that instantiate this IP. This is useful when modifying the RTL of an IP used as a block design subcore, as it eliminates the need to run `xviv generate bd` separately.
+## Build flow
 
-### 2. Recreate the block design
+```mermaid
+flowchart TD
+    ip_cmd["xviv create --ip axi_pulse_cntrl --regenerate"]
+    bd_cmd["xviv create --bd bd_mblaze_system --generate"]
+    synth["synth_design\nbd_mblaze_system HD wrapper"]
+    opt["opt_design"]
+    place["place_design"]
+    phys["phys_opt_design"]
+    route["route_design"]
+    bit["write_bitstream\nbuild/synth/bd_mblaze_system/bd_mblaze_system.bit"]
+    rpts["timing_summary\nutilization\nDRC"]
+    crplat["xviv create --platform mb_platform\ngenerate BSP workspace from XSA"]
+    bldplat["xviv build --platform mb_platform\ncompile BSP"]
+    crapp["xviv create --app firmware\nscaffold Vitis app"]
+    bldapp["xviv build --app firmware\ncompile ELF → executable.elf"]
+    prog["xviv program --platform mb_platform --app firmware\nconfigure FPGA + load ELF via XSCT"]
+
+    ip_cmd  -->|"packaged IP → build/ip/"| bd_cmd
+    bd_cmd  --> synth
+    synth   --> opt --> place --> phys --> route
+    route   --> bit
+    route   --> rpts
+    bit     --> crplat --> bldplat --> crapp --> bldapp --> prog
+```
+
+### Step-by-step
 
 ```sh
+# 1. Package the custom IP
+xviv create --ip axi_pulse_cntrl --regenerate
+
+# 2. Recreate and elaborate the block design
 xviv create --bd bd_mblaze_system --generate
-```
 
-Replays the TCL snapshot to rebuild the block design inside Vivado.
-
-`--generate` generates output products (HDL wrappers, etc.) and returns immediately.
-
-### 3. Run synthesis and implementation
-
-```sh
+# 3. Synthesis and implementation
 xviv synth --bd bd_mblaze_system
-```
 
-Runs synth → opt → place → phys_opt → route and writes the bitstream to `build/synth/bd_mblaze_system/bd_mblaze_system.bit`. Checkpoints for each stage are saved under `build/synth/bd_mblaze_system/checkpoints/`.
+# 4. Create Vitis BSP workspace from the XSA, then compile it
+xviv create --platform mb_platform
+xviv build   --platform mb_platform
 
-To resume from an existing checkpoint (for example, after tweaking a constraint):
+# 5. Scaffold the firmware app, then compile the ELF
+xviv create --app firmware
+xviv build   --app firmware --info
 
-```sh
-xviv synth --bd bd_mblaze_system --resume place
-```
-
-### 4. Build the BSP and firmware
-
-```sh
-xviv build --platform mb_platform
-xviv build --app firmware --info
-```
-
-`--info` prints ELF section sizes after the build completes. The ELF lands at `build/app/firmware/firmware.elf`.
-
-### 5. Program the board
-
-Connect the Basys3 over USB, then run:
-
-```sh
+# 6. Program the board (FPGA bitstream + ELF over JTAG)
 xviv program --platform mb_platform --app firmware
 ```
 
-This configures the FPGA with the bitstream and loads the ELF over JTAG via XSCT. Open a serial terminal at 115200 baud to see the firmware log.
+Open a serial terminal at **115200 baud** to see firmware log output.
+
+Outputs in `build/`:
+
+```
+synth/bd_mblaze_system/
+├── bd_mblaze_system.bit
+├── bd_mblaze_system.xsa
+├── checkpoints/{synth,place,route}.dcp
+└── reports/
+    ├── synth_report_utilization_file.rpt
+    ├── route_report_timing_summary_file.rpt
+    └── route_report_drc_file.rpt
+app/firmware/
+└── executable.elf
+```
+
+### Incremental builds
+
+```sh
+# Resume from the latest available checkpoint
+xviv synth --bd bd_mblaze_system --resume auto
+
+# Constraint changed only — skip to write_bitstream
+xviv synth --bd bd_mblaze_system --resume route
+
+# RTL or BD changed — load synth.dcp, re-run from opt_design onward
+xviv synth --bd bd_mblaze_system --resume synth
+```
 
 ---
 
-## The custom IP in detail
+## Simulation
 
-### Register map
+IP-level testbench (`xsim`, 7 test groups · 20 ns clock · `1ns/1ps` timescale):
 
-| Offset | Name | Access | Description |
-|--------|------|--------|-------------|
-| `0x00` | CTRL | R/W | Bit 0: enable. Bit 1: invert output. |
-| `0x04` | PERIOD | R/W | Counter period in clock cycles (min 1). |
-| `0x08` | WIDTH | R/W | High-time in clock cycles. |
-| `0x0C` | STATUS | RO | Bit 0: current `pulse_out` value. |
+| Group | Description |
+|-------|-------------|
+| Test 1 | `pulse_out` held low after reset (disabled by default) |
+| Test 2 | `PERIOD` and `WIDTH` write / readback |
+| Test 3 | Rising and falling edges appear after `CTRL_ENABLE` |
+| Test 4 | `STATUS[0]` mirrors `pulse_out` on both edges |
+| Test 5 | `CTRL_INVERT` flips polarity; edges still present |
+| Test 6 | Clearing `CTRL_ENABLE` holds `pulse_out` low across ≥ 4 periods |
+| Test 7 | Write `PERIOD = 0` clamped to 1 in register |
 
-At 50 MHz, the default period of 50,000,000 cycles gives a 1 Hz pulse with a 50% duty cycle.
+```sh
+# Run the simulation
+xviv simulate --target tb_axi_pulse_cntrl
 
-### RTL structure
+# Open waveform in Vivado GUI
+xviv open --wdb tb_axi_pulse_cntrl
 
-`if_axi_lite.sv` defines a parameterised SystemVerilog interface with `slave` and `master` modports. `axi_pulse_cntrl.sv` instantiates that interface as a slave and implements two independent AXI state machines (one for writes, one for reads), plus a free-running counter that generates `raw_pulse`, which is optionally inverted before being driven to `pulse_out`.
-
-The `[[wrapper]]` entry in `project.toml` tells xviv to use `pyslang` to parse the source and emit a flat wrapper module, so the IP integrates cleanly with Vivado's block design AXI connection automation.
-
-### Firmware
-
-`main.c` sets the initial period to 1 s (50,000,000 cycles) and enters a polling loop. Button edges are detected by comparing the current and previous GPIO reads. Each button event writes to the appropriate IP register and prints a status line over UART. The pulse state is polled from `STATUS` and reflected on the LEDs on each change.
+# Reload an already-open waveform after re-running simulation
+xviv reload --target tb_axi_pulse_cntrl
+```
 
 ---
 
 ## Edit in GUI
 
-### Block design
-
 ```sh
-# Open in the Vivado GUI
+# Block design — open in Vivado GUI / interactive Tcl
 xviv edit --bd bd_mblaze_system
-
-# Open in terminal as interactive Tcl mode
 xviv edit --bd bd_mblaze_system --nogui
 
-# Run before synthesis if the block design has been modified
+# Regenerate output products after editing
 xviv generate --bd bd_mblaze_system
+xviv generate --bd bd_mblaze_system --force  # force even if marked up-to-date
 
-# Force-generate output products, even if xviv flags them as stale
-xviv generate --bd bd_mblaze_system -force
-```
-
-### IP
-
-```sh
-# Open the IP Packager in the Vivado GUI
+# IP Packager — open in Vivado GUI / interactive Tcl
 xviv edit --ip axi_pulse_cntrl
-
-# Open in terminal as interactive Tcl mode
 xviv edit --ip axi_pulse_cntrl --nogui
 ```
 
@@ -305,31 +333,32 @@ xviv edit --ip axi_pulse_cntrl --nogui
 ## Useful commands
 
 ```sh
-# Inspect any post-route checkpoint in the Vivado GUI
-xviv open --dcp build/synth/bd_mblaze_system/checkpoints/route.dcp
-
-# Re-open the block design editor
-xviv create --bd bd_mblaze_system --edit
-
-# Dry-run: print the TCL xviv would send to Vivado without executing
+# Dry-run — print the Tcl xviv would send to Vivado without executing
 xviv synth --bd bd_mblaze_system --dry-run
 
-# Re-program just the FPGA (e.g. after a bitstream-only rebuild)
+# Inspect a post-route checkpoint in Vivado
+xviv open --dcp build/synth/bd_mblaze_system/checkpoints/route.dcp
+
+# Re-program without rebuilding (bitstream already present)
 xviv program --platform mb_platform --app firmware
 
-# Reset the processor without reprogramming
+# Reset MicroBlaze without reprogramming the FPGA
 xviv processor --reset
 ```
 
-### Simulation
+---
+
+## Prerequisites
+
+- Python ≥ 3.11
+- Vivado 2024.x with Vitis / XSCT on `PATH`, or set:
+  ```sh
+  export XVIV_VIVADO_SOURCE_SCRIPT=/tools/Xilinx/Vivado/2024.1/settings64.sh
+  ```
+- Basys3 board connected over USB-JTAG
 
 ```sh
-# Run the specified simulation target
-xviv simulate --target tb_axi_pulse_cntrl
-
-# Open the waveform in the Vivado waveform GUI
-xviv open --wdb tb_axi_pulse_cntrl
-
-# Reload an already-open waveform after re-running simulation
-xviv reload --wdb tb_axi_pulse_cntrl
+pip install xviv
 ```
+
+---
